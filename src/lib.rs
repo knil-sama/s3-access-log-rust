@@ -6,7 +6,7 @@ use std::net::IpAddr;
 use std::net::Ipv4Addr;
 
 #[derive(Debug, Deserialize,PartialEq)]
-struct WscRecord {
+struct S3AccessLogRecord {
     bucket_owner: String,
     bucket_name: String,
     time: String,
@@ -36,13 +36,18 @@ struct WscRecord {
     acl_required: String
 }
 
+fn convert_wsc_str_to_s3_access_log_record(wsv: &str) -> Vec<S3AccessLogRecord> {
+    let valid_wsv = wsv.replace("[", "\"").replace("]", "\"");
+    let mut reader = ReaderBuilder::new().has_headers(false).delimiter(b' ').from_reader(valid_wsv.as_bytes());
+     reader.deserialize::<S3AccessLogRecord>().map(|res| res.expect("error will parsing csv content")).collect()
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let expected_result = WscRecord {bucket_owner : "7e1c2dcc1527ebbd9a81efbefb6a7d5945b7c6fe00160f682c2b7c056d301e83".to_string(),
+        let expected_result = S3AccessLogRecord {bucket_owner : "7e1c2dcc1527ebbd9a81efbefb6a7d5945b7c6fe00160f682c2b7c056d301e83".to_string(),
         bucket_name: "aws-website-demonchy-5v3aj".to_string(),
         time: "11/Nov/2023:03:37:50 +0000".to_string(),
         remote_ip: std::net::IpAddr::V4(Ipv4Addr::new(130,176,48,151)),
@@ -70,10 +75,7 @@ mod tests {
         acl_required: "-".to_string()
     };
         let wsv = "7e1c2dcc1527ebbd9a81efbefb6a7d5945b7c6fe00160f682c2b7c056d301e83 aws-website-demonchy-5v3aj [11/Nov/2023:03:37:50 +0000] 130.176.48.151 - YDYP07R0QHFNH76W WEBSITE.GET.OBJECT favicon.ico \"GET /favicon.ico HTTP/1.1\" 404 NoSuchKey 346 - 39 - \"-\" \"Amazon CloudFront\" - m3PGwDN1s8smqpOSEELewHILMcdm7xri7/UsWHBhRrT0w23Pp0YcEmgboXyHFTv7qR7RvFMrUgo= - - - aws-website-demonchy-5v3aj.s3-website-us-east-1.amazonaws.com - - -";
-        let valid_wsv = wsv.replace("[", "\"").replace("]", "\"");
-        let mut reader = ReaderBuilder::new().has_headers(false).delimiter(b' ').from_reader(valid_wsv.as_bytes());
-        for result in reader.deserialize::<WscRecord>() {
-            assert_eq!(result.unwrap(), expected_result);
-        }
+        assert_eq!(convert_wsc_str_to_s3_access_log_record(&wsv).into_iter().next().unwrap(), expected_result);
+
     }
 }
