@@ -13,7 +13,6 @@ use std::fmt::Display;
 use std::marker::PhantomData;
 use std::option::Option;
 use std::str::FromStr;
-use std::u32;
 
 // copy paste from https://docs.rs/serde_with/latest/src/serde_with/de/impls.rs.html#939-981
 pub struct DefaultStringToNone;
@@ -161,9 +160,9 @@ mod tests {
     use serde_test::assert_de_tokens_error;
     use std::net::Ipv4Addr;
 
-    use claims::assert_ok_eq;
+    //use claims::assert_ok_eq;
     use serde::Deserialize;
-    use serde_assert::{Deserializer, Token};
+    //use serde_assert::{Deserializer, Token};
 
     #[derive(Debug, PartialEq, Deserialize, Serialize)]
     struct DeserializeNumberFromStringTest {
