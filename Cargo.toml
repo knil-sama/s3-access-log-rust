@@ -12,3 +12,8 @@ http-serde = "2.0.0"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_as = "0.0.1"
 serde_with = "3.4.0"
+
+[dev-dependencies]
+claims = "0.7.1"
+serde_assert = "0.7.1"
+serde_test = "1.0.176"
