@@ -1,5 +1,5 @@
 [package]
-name = "s3-access-log-rust"
+name = "s3_access_log_rust"
 version = "0.1.0"
 edition = "2021"
 
