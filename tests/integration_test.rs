@@ -1,14 +1,17 @@
+use chrono::{DateTime, NaiveDateTime, Utc};
 use http::StatusCode;
 use s3_access_log_rust;
 use std::net::Ipv4Addr;
 
 #[test]
 fn it_convert_s3_access_log_file() {
+    let dt = NaiveDateTime::parse_from_str("11/Nov/2023:03:37:50 +0000", "%d/%b/%Y:%H:%M:%S %z")
+        .unwrap();
     let expected_result = s3_access_log_rust::S3AccessLogRecord {
         bucket_owner: "7e1c2dcc1527ebbd9a81efbefb6a7d5945b7c6fe00160f682c2b7c056d301e83"
             .to_string(),
         bucket_name: "aws-website-demonchy-5v3aj".to_string(),
-        time: "11/Nov/2023:03:37:50 +0000".to_string(),
+        time: DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc),
         remote_ip: std::net::IpAddr::V4(Ipv4Addr::new(130, 176, 48, 151)),
         requester: None,
         request_id: "YDYP07R0QHFNH76W".to_string(),

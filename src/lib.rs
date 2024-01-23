@@ -3,6 +3,7 @@ use csv::ReaderBuilder;
 use http::StatusCode;
 use std::net::IpAddr;
 
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::de::{self, Deserializer, Visitor};
 use serde::ser::Serializer;
 use serde::Deserialize;
@@ -102,12 +103,38 @@ where
     }
 }
 
+// from https://serde.rs/custom-date-format.html#date-in-a-custom-format
+mod my_date_format {
+    use chrono::{DateTime, NaiveDateTime, Utc};
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "%d/%b/%Y:%H:%M:%S %z";
+
+    pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let dt = NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)?;
+        Ok(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
+    }
+}
+
 #[serde_as]
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct S3AccessLogRecord {
     pub bucket_owner: String,
     pub bucket_name: String,
-    pub time: String,
+    #[serde(with = "my_date_format")]
+    pub time: DateTime<Utc>,
     pub remote_ip: IpAddr,
     #[serde_as(as = "DefaultStringToNone")]
     pub requester: Option<String>, //The canonical user ID of the requester, or a - for unauthenticated requests. If the requester was an IAM user, this field returns the requester's IAM user name along with the AWS account root user that the IAM user belongs to. This identifier is the same one used for access control purposes.
@@ -172,11 +199,14 @@ mod tests {
 
     #[test]
     fn it_instanciate_s3_access_log_record_struct() {
+        let dt =
+            NaiveDateTime::parse_from_str("11/Nov/2023:03:37:50 +0000", "%d/%b/%Y:%H:%M:%S %z")
+                .unwrap();
         S3AccessLogRecord {
             bucket_owner: "7e1c2dcc1527ebbd9a81efbefb6a7d5945b7c6fe00160f682c2b7c056d301e83"
                 .to_string(),
             bucket_name: "aws-website-demonchy-5v3aj".to_string(),
-            time: "11/Nov/2023:03:37:50 +0000".to_string(),
+            time: DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc),
             remote_ip: std::net::IpAddr::V4(Ipv4Addr::new(130, 176, 48, 151)),
             requester: None,
             request_id: "YDYP07R0QHFNH76W".to_string(),
@@ -204,29 +234,6 @@ mod tests {
             acl_required: None,
         };
     }
-
-    // #[test]
-    // fn it_deserialize_number_from_string_convert_default_to_none() {
-    //     let mut deserializer = Deserializer::builder([Token::Str("-".to_string())]).build();
-
-    //     assert_ok_eq!(
-    //         DeserializeNumberFromStringTest::deserialize(&mut deserializer),
-    //         tests::DeserializeNumberFromStringTest {
-    //             string_as_number: None
-    //         }
-    //     );
-    // }
-
-    // #[test]
-    // fn it_deserialize_number_from_string_convert_number_to_u64() {
-    //     let mut deserializer = Deserializer::builder([Token::Str("12244334".to_string())]).build();
-    //     assert_ok_eq!(
-    //         DeserializeNumberFromStringTest::deserialize(&mut deserializer),
-    //         DeserializeNumberFromStringTest {
-    //             string_as_number: Some(12244334)
-    //         }
-    //     );
-    // }
 
     #[test]
     fn it_deserialize_number_from_string_convert_negative_number_to_u64_error() {
