@@ -12,7 +12,7 @@ fn it_convert_s3_access_log_file() {
             .to_string(),
         bucket_name: "aws-website-demonchy-5v3aj".to_string(),
         time: DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc),
-        remote_ip: std::net::IpAddr::V4(Ipv4Addr::new(130, 176, 48, 151)),
+        remote_ip: Some(std::net::IpAddr::V4(Ipv4Addr::new(130, 176, 48, 151))),
         requester: None,
         request_id: "YDYP07R0QHFNH76W".to_string(),
         operation: "WEBSITE.GET.OBJECT".to_string(),
